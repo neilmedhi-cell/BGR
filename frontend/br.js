@@ -18,3 +18,17 @@ imageInput.addEventListener("change", () =>{const file=imageInput.files[0];
     downloadButton.hidden=true;
     status.textContent="Image ready.";
 });
+import { pipline } from "@huggingface/transformers";
+let backgroundRemover=null;
+let processedImageUrl=null;
+async function loadBackgroundRemover()
+{
+    if(backgroundRemover) return backgroundRemover;
+    status.textContent="Loading model...";
+    backgroundRemover=await pipline(
+        "Background-removal",
+        "briaai/RMBG-1.4",
+        {device: "webgpu"}
+    );
+    return backgroundRemover;
+}
