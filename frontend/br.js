@@ -1,5 +1,5 @@
 
-import { pipeline } from "@huggingface/transformers";
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1/dist/transformers.min.js";
 
 const imageInput = document.querySelector("#imageInput");
 const previewArea = document.querySelector("#previewArea");
@@ -43,7 +43,11 @@ async function loadBackgroundRemover()
     return backgroundRemover;
 }
 async function renderComposite(color="transparent") {
-    if (!cutoutBlob) return;
+    if (!cutoutBlob) {
+        status.textContent = "Please remove a background first.";
+        return;
+    }
+
     const cutout = new Image();
     const temporaryURL=URL.createObjectURL(cutoutBlob);
     try{
@@ -93,15 +97,17 @@ removeButton.addEventListener("click",async()=>{
     try{
         const remover =await loadBackgroundRemover();
         const output=await remover(selectedFile);
+        const img = Array.isArray(output) ? output[0] : output;
+       
         const canvas =document.createElement("canvas");
-        canvas.width=output.width;
-        canvas.height=output.height;
+        canvas.width=img.width;
+        canvas.height=img.height;
         const ctx=canvas.getContext("2d");
-        const imageData=new ImageData(
-            new Uint8ClampedArray(output.data),
-            output.width,
-            output.height
+        const imageData = new ImageData(new Uint8ClampedArray(img.data),
+            img.width,
+            img.height
         );
+        
         ctx.putImageData(imageData, 0, 0);
 
         const blob=await new Promise((resolve, reject)=>{
