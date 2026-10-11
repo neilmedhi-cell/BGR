@@ -1,10 +1,16 @@
+
+import { pipeline } from "@huggingface/transformers";
+
 const imageInput = document.querySelector("#imageInput");
 const previewArea = document.querySelector("#previewArea");
 const previewImage = document.querySelector("#previewImage");
 const removeButton = document.querySelector("#removeButton");
 const downloadButton = document.querySelector("#downloadButton");
+const backgroundControls = document.querySelector("#backgroundControls");
 const status=document.querySelector("#status");
 let selectedFile=null;
+let currentBackground = "transparent";
+let cutoutBlob = null;
 imageInput.addEventListener("change", () =>{const file=imageInput.files[0];
     if (!file) return;
     if(!file.type.startsWith("image/")){
@@ -21,7 +27,7 @@ imageInput.addEventListener("change", () =>{const file=imageInput.files[0];
     downloadButton.hidden=true;
     status.textContent="Image ready.";
 });
-import { pipeline } from "@huggingface/transformers";
+
 
 let backgroundRemover=null;
 let processedImageUrl=null;
@@ -35,6 +41,7 @@ async function loadBackgroundRemover()
        
     );
     return backgroundRemover;
+}
 async function renderComposite(color="transparent") {
     if (!cutoutBlob) return;
     const cutout = new Image();
@@ -76,7 +83,7 @@ async function renderComposite(color="transparent") {
     }
     }
     
-}        
+      
 
 removeButton.addEventListener("click",async()=>{
     if(!selectedFile)return;
@@ -103,9 +110,11 @@ removeButton.addEventListener("click",async()=>{
                 else reject(new Error("Could not export the image"));
             }, "image/png");
         });
-       backgroundControls.hidden = false;
+
+        cutoutBlob = blob;
+        backgroundControls.hidden = false;
         downloadButton.hidden = false;
-        
+    
         await renderComposite(currentBackground);
         if (processedImageUrl){
             URL.revokeObjectURL(processedImageUrl);
@@ -124,7 +133,9 @@ removeButton.addEventListener("click",async()=>{
         removeButton.disabled=false;
     }
 });
-colorPresets.forEach((button) => {
+const colorButtons = document.querySelectorAll(".color-btn");
+
+colorButtons.forEach((button) => {
     button.addEventListener("click", async () => {
         try {
             await renderComposite(button.dataset.color);
@@ -133,22 +144,6 @@ colorPresets.forEach((button) => {
             status.textContent = "Could not apply background color.";
         }
     });
-});
-customColor.addEventListener("input", async()=> {
-    try {
-        await renderComposite(customColor.value);
-    } catch (error) {
-        console.error(error);
-        status.textContent = "Could not apply custom color.";
-    }
-});
-transparentButton.addEventListener("click", async () => {
-    try {
-        await renderComposite("transparent");
-    } catch (error) {
-        console.error(error);
-        status.textContent = "Could not restore transparency.";
-    }
 });
 downloadButton.addEventListener("click", () =>{
     if(!processedImageUrl)return;
